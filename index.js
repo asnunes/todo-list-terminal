@@ -19,6 +19,10 @@ const commands = [
     name: "remove",
     method: remove,
   },
+  {
+    name: "pomodoro",
+    method: pomodoro,
+  },
 ];
 
 function start() {
@@ -33,14 +37,14 @@ function goToHome() {
     commands.map((c) => c.name),
     "Type your command"
   );
-  (commands[cmdIndex] && commands[cmdIndex].method()) || process.exit(0);
 
-  goToHome();
+  if (cmdIndex === -1) process.exit(0);
+  commands[cmdIndex] && commands[cmdIndex].method();
 }
 
 function add() {
   const todo = readlineSync.question("What do you want to do? ");
-  if (todo) todos.push({ todo: todo.trim(), check: false });
+  if (todo) todos.push({ todo: todo.trim(), check: false, pomodoros: 0 });
   goToHome();
 }
 
@@ -69,6 +73,24 @@ function remove() {
   goToHome();
 }
 
+function pomodoro() {
+  const todoToPomodoroIndex = readlineSync.keyInSelect(
+    formatTodos(),
+    "What todo do you want to have a pomodoro? "
+  );
+
+  if (todoToPomodoroIndex !== -1) {
+    const todo = todos[todoToPomodoroIndex];
+    setTimeout(() => {
+      todo.pomodoros += 1;
+      save();
+      console.log(`Pomodoro de "${todo.todo}" está completo!`);
+      goToHome();
+    }, 3000);
+    console.log(`Pomodoro de "${todo.todo}" setado!`);
+  }
+}
+
 function save() {
   fs.writeFileSync("todos.json", JSON.stringify(todos));
 }
@@ -83,7 +105,10 @@ function loadTodos() {
 }
 
 function formatTodos() {
-  return todos.map((td) => ` ${td.check ? "🟢" : "🔴"} ` + td.todo);
+  return todos.map(
+    (td) =>
+      ` ${td.check ? "🟢" : "🔴"} ` + td.todo + ` ${"🍅".repeat(td.pomodoros)} `
+  );
 }
 
 function showTodos() {
