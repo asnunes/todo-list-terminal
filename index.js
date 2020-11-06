@@ -1,6 +1,7 @@
 const readlineSync = require("readline-sync");
+const fs = require("fs");
 
-let todos = [];
+let todos;
 const commands = [
   {
     name: "add",
@@ -21,7 +22,12 @@ const commands = [
 ];
 
 function start() {
-  showTodos();
+  loadTodos();
+  goToHome();
+}
+
+function goToHome() {
+  save();
 
   const cmdIndex = readlineSync.keyInSelect(
     commands.map((c) => c.name),
@@ -29,18 +35,18 @@ function start() {
   );
   (commands[cmdIndex] && commands[cmdIndex].method()) || process.exit(0);
 
-  start();
+  goToHome();
 }
 
 function add() {
   const todo = readlineSync.question("What do you want to do? ");
   if (todo) todos.push({ todo: todo.trim(), check: false });
-  start();
+  goToHome();
 }
 
 function list() {
   showTodos();
-  start();
+  goToHome();
 }
 
 function check() {
@@ -48,8 +54,10 @@ function check() {
     formatTodos(),
     "What todo do you want to check/uncheck? "
   );
-  todos[todoToCheckIndex].check = !todos[todoToCheckIndex].check;
-  start();
+  if (todoToCheckIndex !== -1)
+    todos[todoToCheckIndex].check = !todos[todoToCheckIndex].check;
+
+  goToHome();
 }
 
 function remove() {
@@ -58,7 +66,20 @@ function remove() {
     "What todo do you want to remove? "
   );
   todos = todos.filter((_td, index) => index !== todoToRemoveIndex);
-  start();
+  goToHome();
+}
+
+function save() {
+  fs.writeFileSync("todos.json", JSON.stringify(todos));
+}
+
+function loadTodos() {
+  if (fs.existsSync("todos.json")) {
+    const data = fs.readFileSync("todos.json", "utf-8");
+    todos = JSON.parse(data);
+  } else {
+    todos = [];
+  }
 }
 
 function formatTodos() {
